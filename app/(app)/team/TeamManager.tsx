@@ -15,7 +15,7 @@ export function TeamManager({ teamName, myRole, members, invites }: { teamName: 
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [link, setLink] = useState<string | null>(null);
+  const [link, setLink] = useState<{ url: string; id: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [inviteRole, setInviteRole] = useState<"admin" | "viewer">("viewer");
   const [newTeam, setNewTeam] = useState("");
@@ -112,7 +112,7 @@ export function TeamManager({ teamName, myRole, members, invites }: { teamName: 
                 start(async () => {
                   const res = await createInvite(inviteRole, 7);
                   if (res.ok) {
-                    setLink(`${window.location.origin}/invite/${res.token}`);
+                    setLink({ url: `${window.location.origin}/invite/${res.token}`, id: res.id });
                     router.refresh();
                   } else setError(res.error);
                 });
@@ -125,11 +125,11 @@ export function TeamManager({ teamName, myRole, members, invites }: { teamName: 
           {link ? (
             <div className="mt-3 rounded-lg bg-surface-container-lowest p-3">
               <p className="mb-1 text-xs text-on-surface-variant">Single-use, expires in 7 days. Shown once — copy it now.</p>
-              <div className="metric break-all text-xs text-on-surface">{link}</div>
+              <div className="metric break-all text-xs text-on-surface">{link.url}</div>
               <button
                 type="button"
                 onClick={async () => {
-                  await navigator.clipboard.writeText(link);
+                  await navigator.clipboard.writeText(link.url);
                   setCopied(true);
                 }}
                 className={`${btn} mt-2 border border-white/15 text-on-surface hover:bg-white/5`}
@@ -145,7 +145,13 @@ export function TeamManager({ teamName, myRole, members, invites }: { teamName: 
                   <span className="text-on-surface-variant">
                     Pending {ROLE_LABEL[i.role]} invite · expires {new Date(i.expires_at).toLocaleDateString()}
                   </span>
-                  <button type="button" disabled={pending} onClick={() => run(() => revokeInvite(i.id))} className="min-h-[44px] px-3 text-xs font-semibold text-error hover:bg-white/5">
+                  <button type="button" disabled={pending} onClick={() =>
+                      run(async () => {
+                        const r = await revokeInvite(i.id);
+                        if (r.ok && link?.id === i.id) setLink(null);
+                        return r;
+                      })
+                    } className="min-h-[44px] px-3 text-xs font-semibold text-error hover:bg-white/5">
                     Revoke
                   </button>
                 </li>

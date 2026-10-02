@@ -12,7 +12,13 @@ import { requireTeam } from "@/lib/teams";
 import { CATEGORY_LABEL } from "@/lib/data/types";
 import { formatDate, moneyExact } from "@/lib/format";
 
-export const metadata = { title: "Tenant" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return { title: "Tenant" };
+  const { active } = await requireTeam();
+  const tenant = await getTenant(id, active.team_id);
+  return { title: tenant?.name ?? "Tenant" };
+}
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
 const card = "rounded-xl bg-surface-container-low p-4 shadow-md ring-1 ring-white/5";

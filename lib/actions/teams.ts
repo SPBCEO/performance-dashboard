@@ -76,23 +76,23 @@ async function requireTeamRole(roles: Role[]) {
 }
 
 /** Returns the raw token ONCE; only its SHA-256 hash is stored. */
-export async function createInvite(role: "admin" | "viewer", days: number): Promise<Result<{ token: string }>> {
+export async function createInvite(role: "admin" | "viewer", days: number): Promise<Result<{ token: string; id: string }>> {
   const ctx = await requireTeamRole(["owner", "admin"]);
   if (!ctx) return { ok: false, error: "Only owners and admins can invite people." };
   if (role !== "admin" && role !== "viewer") return { ok: false, error: "Invalid role." };
   const ttl = Math.min(Math.max(Math.floor(days) || 7, 1), 30);
   const token = randomBytes(24).toString("base64url");
   const supabase = await createClient();
-  const { error } = await supabase.from("team_invites").insert({
+  const { data, error } = await supabase.from("team_invites").insert({
     team_id: ctx.active!.team_id,
     role,
     token_hash: createHash("sha256").update(token).digest("hex"),
     expires_at: new Date(Date.now() + ttl * 86400_000).toISOString(),
     max_uses: 1,
-  });
-  if (error) return { ok: false, error: "Could not create the invite." };
+  }).select("id").single();
+  if (error || !data) return { ok: false, error: "Could not create the invite." };
   revalidatePath("/team");
-  return { ok: true, token };
+  return { ok: true, token, id: data.id as string };
 }
 
 export async function revokeInvite(id: string): Promise<Result> {
