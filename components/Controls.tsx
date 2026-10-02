@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
-import type { CategoryFilter, Period, Property } from "@/lib/data/types";
+import type { CategoryFilter, Period } from "@/lib/data/types";
 
 function useParamSetter() {
   const router = useRouter();
@@ -18,79 +18,75 @@ function useParamSetter() {
   return { set, pending };
 }
 
-function Segmented<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: T;
-  options: { value: T; label: string }[];
-  onChange: (v: T) => void;
-}) {
-  return (
-    <div role="group" aria-label={label} className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          aria-pressed={value === o.value}
-          onClick={() => onChange(o.value)}
-          className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-            value === o.value ? "bg-indigo-600 text-white" : "text-slate-600 hover:bg-slate-100"
-          }`}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export const PERIOD_OPTIONS: { value: Period; label: string }[] = [
   { value: "daily", label: "Daily" },
   { value: "monthly", label: "Monthly" },
   { value: "annual", label: "Annual" },
 ];
 
+function PeriodToggle({ period, onChange }: { period: Period; onChange: (p: Period) => void }) {
+  return (
+    <div role="group" aria-label="Period" className="flex items-center rounded-xl bg-surface-container-lowest p-1 shadow-inner">
+      {PERIOD_OPTIONS.map((o) => {
+        const on = period === o.value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onChange(o.value)}
+            className={`min-h-[44px] flex-1 rounded-lg px-4 text-xs font-medium transition-all active:scale-95 ${
+              on ? "bg-surface-container-highest font-semibold text-on-surface shadow-sm" : "text-on-surface-variant"
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function DashboardControls({
   period,
   category,
-  properties,
-  propertyId,
+  counts,
 }: {
   period: Period;
   category: CategoryFilter;
-  properties: Property[];
-  propertyId: string;
+  counts: { all: number; fb: number; nonFb: number };
 }) {
   const { set, pending } = useParamSetter();
+  const pills: { value: CategoryFilter; label: string; count: number; dot?: string; on: string }[] = [
+    { value: "all", label: "All Categories", count: counts.all, on: "bg-primary text-on-primary" },
+    { value: "fb", label: "F&B Sector", count: counts.fb, dot: "bg-primary-container", on: "bg-primary-container text-on-primary-container" },
+    { value: "non-fb", label: "Non-F&B / Retail", count: counts.nonFb, dot: "bg-secondary", on: "bg-secondary text-on-secondary" },
+  ];
   return (
-    <div className={`flex flex-wrap items-center gap-3 ${pending ? "opacity-70" : ""}`} aria-busy={pending}>
-      <Segmented label="Period" value={period} options={PERIOD_OPTIONS} onChange={(v) => set("period", v)} />
-      <Segmented
-        label="Category"
-        value={category}
-        options={[
-          { value: "all", label: "All" },
-          { value: "fb", label: "F&B" },
-          { value: "non-fb", label: "Non-F&B" },
-        ]}
-        onChange={(v) => set("category", v === "all" ? null : v)}
-      />
-      {properties.length > 1 ? (
-        <select
-          aria-label="Property"
-          value={propertyId}
-          onChange={(e) => set("property", e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm"
-        >
-          {properties.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-      ) : null}
+    <div className={`flex flex-col gap-1 ${pending ? "opacity-70" : ""}`} aria-busy={pending}>
+      <div className="md:max-w-md"><PeriodToggle period={period} onChange={(v) => set("period", v)} /></div>
+      <div role="group" aria-label="Category" className="no-scrollbar flex items-center gap-2 overflow-x-auto py-1">
+        {pills.map((p) => {
+          const on = category === p.value;
+          return (
+            <button
+              key={p.value}
+              type="button"
+              aria-pressed={on}
+              onClick={() => set("category", p.value === "all" ? null : p.value)}
+              className={`flex min-h-[44px] shrink-0 items-center gap-2 rounded-full px-4 text-xs transition-all ${
+                on ? `${p.on} font-semibold shadow-sm` : "bg-surface-container text-on-surface-variant hover:text-on-surface"
+              }`}
+            >
+              {p.dot && !on ? <span className={`h-2 w-2 rounded-full ${p.dot}`} /> : null}
+              <span>{p.label}</span>
+              <span className={`metric text-xs ${on ? "rounded-full bg-black/20 px-1.5 py-0.5" : "opacity-70"}`}>
+                {on ? p.count : `(${p.count})`}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -98,8 +94,8 @@ export function DashboardControls({
 export function PeriodControl({ period }: { period: Period }) {
   const { set, pending } = useParamSetter();
   return (
-    <div className={pending ? "opacity-70" : ""}>
-      <Segmented label="Period" value={period} options={PERIOD_OPTIONS} onChange={(v) => set("period", v)} />
+    <div className={`md:max-w-xs ${pending ? "opacity-70" : ""}`}>
+      <PeriodToggle period={period} onChange={(v) => set("period", v)} />
     </div>
   );
 }

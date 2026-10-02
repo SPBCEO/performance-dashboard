@@ -5,7 +5,7 @@ import { useEntryModal } from "./EntryModal";
 export function AddEntryButton({
   tenantId,
   className,
-  children = "Add Entry",
+  children = "Record Turnover",
 }: {
   tenantId?: string;
   className?: string;
@@ -18,7 +18,7 @@ export function AddEntryButton({
       onClick={() => openAdd({ tenantId })}
       className={
         className ??
-        "inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+        "inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-primary-container px-5 text-sm font-semibold text-on-primary-container hover:brightness-110 active:scale-95"
       }
     >
       {children}

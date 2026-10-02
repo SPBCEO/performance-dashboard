@@ -81,7 +81,7 @@ function Overlay({ title, onClose, children }: { title: string; onClose: () => v
   }, [onClose]);
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-0 backdrop-blur-md sm:items-center sm:p-4"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
@@ -89,9 +89,10 @@ function Overlay({ title, onClose, children }: { title: string; onClose: () => v
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="w-full max-w-md rounded-t-2xl bg-white p-6 shadow-xl sm:rounded-2xl"
+        className="pb-safe w-full max-w-md rounded-t-2xl border-t border-white/15 bg-[#1e293b] p-5 shadow-[0_12px_32px_-4px_rgba(0,0,0,0.45)] sm:rounded-2xl sm:border"
       >
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">{title}</h2>
+        <div aria-hidden="true" className="mx-auto mb-3 h-1 w-9 rounded-full bg-slate-600 sm:hidden" />
+        <h2 className="mb-4 font-headline text-xl font-semibold text-on-surface">{title}</h2>
         {children}
       </div>
     </div>
@@ -136,13 +137,13 @@ function EntryForm({
   return (
     <Overlay title={editing ? "Edit turnover entry" : "Add turnover entry"} onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-xs font-medium text-on-surface-variant">
           Tenant
           <select
             required
             value={tenantId}
             onChange={(e) => setTenantId(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            className="mt-1 block min-h-[48px] w-full rounded-lg border border-white/10 bg-surface-container-lowest px-3 text-base text-on-surface focus:border-primary focus:outline-none"
           >
             <option value="" disabled>Select a tenant…</option>
             {grouped.map(({ p, list }) => (
@@ -155,17 +156,17 @@ function EntryForm({
           </select>
         </label>
         <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm font-medium text-slate-700">
+          <label className="block text-xs font-medium text-on-surface-variant">
             Date
             <input
               type="date"
               required
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              className="metric mt-1 block min-h-[48px] w-full rounded-lg border border-white/10 bg-surface-container-lowest px-3 text-base text-on-surface focus:border-primary focus:outline-none"
             />
           </label>
-          <label className="block text-sm font-medium text-slate-700">
+          <label className="block text-xs font-medium text-on-surface-variant">
             Amount (USD)
             <input
               type="number"
@@ -176,21 +177,21 @@ function EntryForm({
               placeholder="4500"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              className="metric mt-1 block min-h-[48px] w-full rounded-lg border border-white/10 bg-surface-container-lowest px-3 text-base text-on-surface focus:border-primary focus:outline-none"
             />
           </label>
         </div>
         {error ? (
-          <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>
+          <p role="alert" className="rounded-lg bg-error-container/50 px-3 py-2 text-sm text-on-error-container">{error}</p>
         ) : null}
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
+          <button type="button" onClick={onClose} className="min-h-[44px] rounded-full border border-white/15 px-5 text-sm font-medium text-on-surface hover:bg-white/5">
             Cancel
           </button>
           <button
             type="submit"
             disabled={pending}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+            className="min-h-[44px] rounded-full bg-primary-container px-6 text-sm font-semibold text-on-primary-container hover:brightness-110 disabled:opacity-60"
           >
             {pending ? "Saving…" : editing ? "Save changes" : "Save"}
           </button>
@@ -205,13 +206,13 @@ function DeleteConfirm({ entry, onClose }: { entry: EditableEntry & { tenantName
   const [pending, startTransition] = useTransition();
   return (
     <Overlay title="Delete this entry?" onClose={onClose}>
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-on-surface-variant">
         {entry.tenantName ? `${entry.tenantName} · ` : ""}
         {entry.entry_date} · ${entry.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}. This can’t be undone.
       </p>
-      {error ? <p role="alert" className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
+      {error ? <p role="alert" className="mt-3 rounded-lg bg-error-container/50 px-3 py-2 text-sm text-on-error-container">{error}</p> : null}
       <div className="mt-5 flex justify-end gap-2">
-        <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
+        <button type="button" onClick={onClose} className="min-h-[44px] rounded-full border border-white/15 px-5 text-sm font-medium text-on-surface hover:bg-white/5">
           Cancel
         </button>
         <button
@@ -224,7 +225,7 @@ function DeleteConfirm({ entry, onClose }: { entry: EditableEntry & { tenantName
               else setError(res.error);
             })
           }
-          className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-60"
+          className="min-h-[44px] rounded-full bg-error-container px-6 text-sm font-semibold text-on-error-container hover:brightness-110 disabled:opacity-60"
         >
           {pending ? "Deleting…" : "Delete"}
         </button>

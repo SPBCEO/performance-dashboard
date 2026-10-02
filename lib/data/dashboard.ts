@@ -45,6 +45,11 @@ export type TenantView = {
   tenant: Tenant;
   entryCount: number;
   annualTotal: number;
+  /** trailing 12 calendar months ending at the property's latest month */
+  ttmTotal: number;
+  ttmCount: number;
+  /** last 3 calendar months ending at the property's latest month (oldest first) */
+  flow: number[];
   performance: TenantPerformance;
   periods: Record<Period, PeriodStat | null>;
 };
@@ -72,6 +77,8 @@ export function buildTenantViews(
   const anchor = latestDate(anchorEntries);
   const anchorMonth = anchor ? anchor.slice(0, 7) : null;
   const anchorYear = anchor ? anchor.slice(0, 4) : null;
+  const monthIdx = (iso: string) => Number(iso.slice(0, 4)) * 12 + Number(iso.slice(5, 7)) - 1;
+  const anchorIdx = anchor ? monthIdx(anchor) : null;
   const byTenant = new Map<string, TurnoverEntry[]>();
   for (const e of entries) {
     const list = byTenant.get(e.tenant_id);
@@ -80,10 +87,25 @@ export function buildTenantViews(
   }
   const views = tenants.map<TenantView>((tenant) => {
     const own = byTenant.get(tenant.id) ?? [];
+    const ttm =
+      anchorIdx === null
+        ? []
+        : own.filter((e) => {
+            const d = anchorIdx - monthIdx(e.entry_date);
+            return d >= 0 && d <= 11;
+          });
+    const flow = [2, 1, 0].map((back) =>
+      anchorIdx === null
+        ? 0
+        : own.filter((e) => monthIdx(e.entry_date) === anchorIdx - back).reduce((s, e) => s + e.amount, 0),
+    );
     return {
       tenant,
       entryCount: own.length,
       annualTotal: own.filter((e) => e.entry_date.startsWith(anchorYear ?? "")).reduce((s, e) => s + e.amount, 0),
+      ttmTotal: ttm.reduce((s, e) => s + e.amount, 0),
+      ttmCount: ttm.length,
+      flow,
       performance: scoreTenant(own, anchorMonth),
       periods: {
         daily: periodStat(own, tenant, "daily"),

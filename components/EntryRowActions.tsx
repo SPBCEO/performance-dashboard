@@ -5,12 +5,12 @@ import { useEntryModal, type EditableEntry } from "./EntryModal";
 export function EntryRowActions({ entry, tenantName }: { entry: EditableEntry; tenantName: string }) {
   const { openEdit, confirmDelete } = useEntryModal();
   return (
-    <div className="flex justify-end gap-1">
+    <div className="flex shrink-0 items-center">
       <button
         type="button"
         onClick={() => openEdit(entry)}
         aria-label={`Edit entry ${entry.entry_date}`}
-        className="rounded-md px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
+        className="min-h-[44px] rounded-lg px-3 text-xs font-semibold text-primary hover:bg-white/5"
       >
         Edit
       </button>
@@ -18,7 +18,7 @@ export function EntryRowActions({ entry, tenantName }: { entry: EditableEntry; t
         type="button"
         onClick={() => confirmDelete({ ...entry, tenantName })}
         aria-label={`Delete entry ${entry.entry_date}`}
-        className="rounded-md px-2 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50"
+        className="min-h-[44px] rounded-lg px-3 text-xs font-semibold text-error hover:bg-white/5"
       >
         Delete
       </button>

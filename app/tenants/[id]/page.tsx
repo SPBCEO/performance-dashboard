@@ -9,9 +9,10 @@ import { aggregate, sum } from "@/lib/data/aggregate";
 import { buildTenantViews, parsePeriod } from "@/lib/data/dashboard";
 import { getTenant, listEntries, listTenants } from "@/lib/data/queries";
 import { CATEGORY_LABEL } from "@/lib/data/types";
-import { formatDate, money, moneyExact } from "@/lib/format";
+import { formatDate, moneyExact } from "@/lib/format";
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
+const card = "rounded-xl bg-surface-container-low p-4 shadow-md ring-1 ring-white/5";
 
 export default async function TenantDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SP }) {
   const { id } = await params;
@@ -28,59 +29,64 @@ export default async function TenantDetail({ params, searchParams }: { params: P
   const newestFirst = [...entries].sort((a, b) => b.entry_date.localeCompare(a.entry_date));
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <Link href="/tenants" className="text-sm text-indigo-600 hover:underline">← All tenants</Link>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold text-slate-900">{tenant.name}</h1>
-          <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-            <span>{CATEGORY_LABEL[tenant.category]}</span>
-            <StatusBadge performance={view.performance} showDetail />
-          </div>
+    <div className="flex flex-col gap-4">
+      <Link href="/tenants" className="inline-flex min-h-[44px] items-center text-sm font-semibold text-primary hover:underline">
+        ← All tenants
+      </Link>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <span className="label-caps text-primary">{CATEGORY_LABEL[tenant.category]}</span>
+          <h1 className="truncate font-headline text-2xl font-semibold text-on-surface">{tenant.name}</h1>
         </div>
-        <AddEntryButton tenantId={tenant.id} />
+        <StatusBadge performance={view.performance} showDetail />
       </div>
 
       {entries.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-          <p className="font-medium text-slate-800">No turnover recorded yet</p>
-          <div className="mt-4"><AddEntryButton tenantId={tenant.id} /></div>
+        <div className="rounded-xl border border-dashed border-outline-variant p-10 text-center">
+          <p className="font-semibold text-on-surface">No turnover recorded yet</p>
+          <div className="mt-4 flex justify-center">
+            <AddEntryButton
+              tenantId={tenant.id}
+              className="min-h-[48px] rounded-full bg-primary-container px-5 text-sm font-semibold text-on-primary-container"
+            >
+              Record Turnover
+            </AddEntryButton>
+          </div>
         </div>
       ) : (
         <>
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <section className={`${card} flex flex-col gap-3`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="text-xs text-slate-500">Total turnover</div>
-                <div className="text-2xl font-semibold text-slate-900">{money(sum(entries))}</div>
+                <span className="label-caps text-on-surface-variant">Total Turnover</span>
+                <div className="metric text-[26px] font-bold leading-8 text-on-surface">{moneyExact(sum(entries))}</div>
               </div>
-              <PeriodControl period={period} />
+              <div className="w-full sm:w-72"><PeriodControl period={period} /></div>
             </div>
             <TrendChart data={series} category={tenant.category} />
           </section>
 
-          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <h2 className="border-b border-slate-100 px-5 py-3 text-sm font-semibold text-slate-900">Entries</h2>
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-5 py-2 font-medium">Date</th>
-                  <th className="px-5 py-2 text-right font-medium">Amount</th>
-                  <th className="px-5 py-2"><span className="sr-only">Actions</span></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {newestFirst.map((e) => (
-                  <tr key={e.id}>
-                    <td className="px-5 py-2.5 text-slate-800">{formatDate(e.entry_date)}</td>
-                    <td className="px-5 py-2.5 text-right tabular-nums text-slate-900">{moneyExact(e.amount)}</td>
-                    <td className="px-5 py-2.5">
-                      <EntryRowActions entry={e} tenantName={tenant.name} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <section className="overflow-hidden rounded-xl bg-surface-container-low ring-1 ring-white/5">
+            <div className="flex items-center justify-between border-b border-white/5 px-4 py-2">
+              <h2 className="font-headline text-lg font-semibold text-on-surface">Entries</h2>
+              <AddEntryButton
+                tenantId={tenant.id}
+                className="min-h-[44px] px-2 text-sm font-semibold text-primary hover:underline"
+              >
+                + Record
+              </AddEntryButton>
+            </div>
+            <ul>
+              {newestFirst.map((e) => (
+                <li key={e.id} className="flex min-h-[56px] items-center justify-between gap-3 border-b border-white/5 px-4 last:border-b-0 odd:bg-surface-container-lowest/30">
+                  <div>
+                    <div className="text-sm text-on-surface">{formatDate(e.entry_date)}</div>
+                    <div className="metric text-[13px] font-semibold text-on-surface">{moneyExact(e.amount)}</div>
+                  </div>
+                  <EntryRowActions entry={e} tenantName={tenant.name} />
+                </li>
+              ))}
+            </ul>
           </section>
         </>
       )}
