@@ -7,6 +7,7 @@ import { useEntryModal } from "./EntryModal";
 
 const NAV = [
   { href: "/", label: "Overview" },
+  { href: "/tenants", label: "Tenants" },
 ];
 
 export function Sidebar({ children }: { children: React.ReactNode }) {

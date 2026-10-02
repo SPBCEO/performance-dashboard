@@ -2,22 +2,22 @@
 
 ## Sprint 1 — Database + Core CRUD + Daily Chart
 **Goal:** record a turnover entry and see it in a chart.
-- [ ] Create Supabase tables (properties, tenants, turnover_entries) + RLS + seed.
-- [ ] Build `lib/data/` queries: list tenants, aggregate entries by day.
-- [ ] Build `lib/actions/` for create/update/delete turnover entry.
-- [ ] Dashboard page: property total turnover trend chart (daily).
-- [ ] Add Entry modal: tenant select, date, amount → persists → chart updates.
-- [ ] Loading / empty / error states on dashboard.
+- [x] Create Supabase tables (properties, tenants, turnover_entries) + RLS + seed.
+- [x] Build `lib/data/` queries: list tenants, aggregate entries by day.
+- [x] Build `lib/actions/` for create/update/delete turnover entry.
+- [x] Dashboard page: property total turnover trend chart (daily).
+- [x] Add Entry modal: tenant select, date, amount → persists → chart updates.
+- [x] Loading / empty / error states on dashboard.
 
 **DoD:** Add an entry via the UI; it appears in the daily chart. No login required.
 
 ## Sprint 2 — Periods, Categories, Full Dashboard ← v1 Functional
 **Goal:** daily/monthly/annual toggle + F&B vs non-F&B breakdown.
-- [ ] Period selector (Daily / Monthly / Annual) — re-aggregates charts.
-- [ ] Category filter (All / F&B / Non-F&B) — filters chart + tenant cards.
-- [ ] Per-tenant turnover cards with period toggle + performance badge.
-- [ ] Edit / delete entries from a tenant detail view.
-- [ ] All five states on every screen.
+- [x] Period selector (Daily / Monthly / Annual) — re-aggregates charts.
+- [x] Category filter (All / F&B / Non-F&B) — filters chart + tenant cards.
+- [x] Per-tenant turnover cards with period toggle + performance badge.
+- [x] Edit / delete entries from a tenant detail view.
+- [x] All five states on every screen.
 
 **DoD:** Success scenario runs end-to-end (see PRD). ← **v1 functional milestone**
 
