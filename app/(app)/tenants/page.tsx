@@ -1,6 +1,9 @@
 import { DashboardControls } from "@/components/Controls";
+import { SetupPanel } from "@/components/SetupPanel";
 import { TenantList } from "@/components/TenantList";
 import { buildTenantViews, loadDashboard, parseCategory, parsePeriod } from "@/lib/data/dashboard";
+
+export const metadata = { title: "Tenants" };
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
 
@@ -8,9 +11,17 @@ export default async function TenantsPage({ searchParams }: { searchParams: SP }
   const sp = await searchParams;
   const period = parsePeriod(sp.period);
   const category = parseCategory(sp.category);
-  const { property, tenants, entries } = await loadDashboard(sp.property);
+  const { properties, property, tenants, entries } = await loadDashboard(sp.property);
 
-  if (!property) return <p className="text-on-surface-variant">No properties found.</p>;
+  if (!property) {
+    return (
+      <div className="flex flex-col gap-4">
+        <h1 className="font-headline text-2xl font-semibold text-on-surface">Tenants</h1>
+        <p className="text-on-surface-variant">No properties yet. Add one to get started.</p>
+        <SetupPanel properties={properties} defaultOpen />
+      </div>
+    );
+  }
 
   const fbCount = tenants.filter((t) => t.category === "fb").length;
   const visible = category === "all" ? tenants : tenants.filter((t) => t.category === category);
@@ -29,6 +40,7 @@ export default async function TenantsPage({ searchParams }: { searchParams: SP }
         counts={{ all: tenants.length, fb: fbCount, nonFb: tenants.length - fbCount }}
       />
       <TenantList views={views} period={period} title="All Tenants" subtitle="Underperforming first, then by annual turnover" />
+      <SetupPanel properties={properties} defaultOpen={tenants.length === 0} />
     </div>
   );
 }

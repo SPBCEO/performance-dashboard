@@ -7,7 +7,7 @@ const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", displa
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Performance Dashboard",
+  title: { default: "Performance Dashboard", template: "%s | Performance Dashboard" },
   description: "Tenant and property turnover by F&B / non-F&B across daily, monthly and annual periods.",
 };
 

@@ -10,7 +10,9 @@ import { UUID } from "@/lib/validation";
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
-const COOKIE_OPTS = { httpOnly: true, sameSite: "lax" as const, path: "/", maxAge: 60 * 60 * 24 * 365 };
+// Not httpOnly on purpose: it only names the active team (the server re-verifies membership on every request),
+// and the client compares it to detect a team switch made in another tab.
+const COOKIE_OPTS = { httpOnly: false, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, path: "/", maxAge: 60 * 60 * 24 * 365 };
 
 async function setActive(teamId: string) {
   (await cookies()).set(ACTIVE_TEAM_COOKIE, teamId, COOKIE_OPTS);

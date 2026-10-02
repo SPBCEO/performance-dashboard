@@ -29,14 +29,14 @@ export function TenantCard({ view, period }: { view: TenantView; period: Period 
   const flowColor = performance.status === "underperforming" ? "#ffb4ab" : performance.status === "outperforming" ? "#68dba9" : "#c0c1ff";
 
   return (
-    <article className="rounded-xl bg-surface-container-low p-3.5 shadow-sm ring-1 ring-white/5">
+    <article className="relative rounded-xl bg-surface-container-low p-3.5 shadow-sm ring-1 ring-white/5">
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
           <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-container ${isFb ? "text-primary-container" : "text-secondary"}`}>
             <Icon className="h-[22px] w-[22px]" />
           </div>
           <div className="min-w-0">
-            <Link href={`/tenants/${tenant.id}`} className="block truncate font-headline text-lg font-semibold leading-tight text-on-surface hover:text-primary">
+            <Link href={`/tenants/${tenant.id}`} className="block truncate font-headline text-lg font-semibold leading-tight text-on-surface after:absolute after:inset-0 after:content-[''] hover:text-primary">
               {tenant.name}
             </Link>
             <span className="text-xs text-on-surface-variant">{CATEGORY_LABEL[tenant.category]}</span>
@@ -50,7 +50,7 @@ export function TenantCard({ view, period }: { view: TenantView; period: Period 
           <p className="text-sm text-on-surface-variant">No turnover recorded yet</p>
           <AddEntryButton
             tenantId={tenant.id}
-            className="min-h-[44px] rounded-full bg-primary-container px-4 text-sm font-semibold text-on-primary-container hover:brightness-110"
+            className="relative z-10 min-h-[44px] rounded-full bg-primary-container px-4 text-sm font-semibold text-on-primary-container hover:brightness-110"
           >
             Add Entry
           </AddEntryButton>
@@ -81,7 +81,7 @@ export function TenantCard({ view, period }: { view: TenantView; period: Period 
           </div>
           <div className="mt-1 flex items-center justify-between">
             <span className="text-xs text-on-surface-variant">{stat?.label}</span>
-            <Link href={`/tenants/${tenant.id}`} className="inline-flex min-h-[44px] items-center text-xs font-semibold text-primary hover:underline">
+            <Link href={`/tenants/${tenant.id}`} className="relative z-10 inline-flex min-h-[44px] items-center text-xs font-semibold text-primary hover:underline">
               View {view.entryCount} {view.entryCount === 1 ? "entry" : "entries"} →
             </Link>
           </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import type { Property } from "@/lib/data/types";
 import type { Role } from "@/lib/teams-shared";
 import { useEntryModal } from "./EntryModal";
@@ -30,7 +31,25 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const search = useSearchParams().toString();
+  const router = useRouter();
   const { openAdd, canEdit } = useEntryModal();
+
+  // Another tab may have switched the active team (shared cookie). Re-render this tab if so.
+  useEffect(() => {
+    const check = () => {
+      const m = document.cookie.match(/(?:^|; )active_team=([^;]+)/);
+      const cookieTeam = m ? decodeURIComponent(m[1]) : null;
+      if (cookieTeam && cookieTeam !== activeTeamId && teams.some((t) => t.id === cookieTeam)) router.refresh();
+    };
+    check();
+    window.addEventListener("focus", check);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      window.removeEventListener("focus", check);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [activeTeamId, teams, pathname, search, router]);
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
@@ -76,7 +95,7 @@ export function AppShell({
       </main>
 
       <nav
-        aria-label="Primary"
+        aria-label="Primary (mobile)"
         className="pb-safe fixed bottom-0 z-50 w-full border-t border-white/5 bg-surface-container-low/90 backdrop-blur-xl md:hidden"
       >
         <div className="flex h-16 items-center justify-around px-3">

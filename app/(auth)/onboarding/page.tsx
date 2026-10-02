@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getTeamContext } from "@/lib/teams";
 import { OnboardingForms } from "./OnboardingForms";
 
+export const metadata = { title: "Set up your team" };
+
 export default async function OnboardingPage() {
   const ctx = await getTeamContext();
   if (!ctx.user) redirect("/login");

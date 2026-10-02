@@ -29,7 +29,7 @@ export function TenantList({
             <h2 className="font-headline text-xl font-semibold text-on-surface">{title}</h2>
             <span className="metric rounded-full bg-surface-container-highest px-2 py-0.5 text-xs font-semibold text-on-surface-variant">{views.length}</span>
           </div>
-          <p className="mt-0.5 text-xs text-on-surface-variant">{subtitle}</p>
+          <p className="mt-0.5 text-xs text-on-surface-variant">{reversed ? "Reversed: underperforming last, then by annual turnover" : subtitle}</p>
         </div>
         {views.length > 1 ? (
           <button

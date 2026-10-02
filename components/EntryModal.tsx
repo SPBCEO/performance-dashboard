@@ -170,6 +170,16 @@ function EntryForm({
 
   return (
     <Overlay title={editing ? "Edit turnover entry" : "Add turnover entry"} onClose={onClose}>
+      {tenants.length === 0 ? (
+        <div className="space-y-4">
+          <p className="text-sm text-on-surface-variant">
+            There are no tenants to record turnover for yet. Add a property and a tenant first (Tenants page → Set up properties &amp; tenants).
+          </p>
+          <div className="flex justify-end">
+            <button type="button" onClick={onClose} className="min-h-[44px] rounded-full bg-primary-container px-6 text-sm font-semibold text-on-primary-container">Got it</button>
+          </div>
+        </div>
+      ) : (
       <form onSubmit={submit} className="space-y-4">
         <label className="block text-xs font-medium text-on-surface-variant">
           Tenant
@@ -195,6 +205,8 @@ function EntryForm({
             <input
               type="date"
               required
+              min="2000-01-01"
+              max={todayISO()}
               value={date}
               onChange={(e) => setDate(e.target.value)}
               className="metric mt-1 block min-h-[48px] w-full rounded-lg border border-white/10 bg-surface-container-lowest px-3 text-base text-on-surface focus:border-primary focus:outline-none"
@@ -231,6 +243,7 @@ function EntryForm({
           </button>
         </div>
       </form>
+      )}
     </Overlay>
   );
 }

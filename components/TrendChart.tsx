@@ -26,7 +26,7 @@ export function TrendChart({ data, category }: { data: Bucket[]; category: Categ
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(219,194,176,0.12)" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#dbc2b0" }} tickLine={false} axisLine={{ stroke: "rgba(219,194,176,0.2)" }} minTickGap={24} />
+          <XAxis dataKey="label" padding={{ left: 16, right: 16 }} tick={{ fontSize: 10, fill: "#dbc2b0" }} tickLine={false} axisLine={{ stroke: "rgba(219,194,176,0.2)" }} minTickGap={24} />
           <YAxis
             tickFormatter={moneyCompact}
             tick={{ fontSize: 10, fill: "#a38c7c", fontFamily: "var(--font-jetbrains)" }}

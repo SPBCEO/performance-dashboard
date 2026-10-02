@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { canEdit, requireTeam, type Role } from "@/lib/teams";
 import { TeamManager, type InviteRow, type MemberRow } from "./TeamManager";
 
+export const metadata = { title: "Team" };
+
 export default async function TeamPage() {
   const { user, active } = await requireTeam();
   const supabase = await createClient();

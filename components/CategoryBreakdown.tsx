@@ -18,7 +18,7 @@ export function CategoryBreakdown({ fb, nonFb }: { fb: Side; nonFb: Side }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="flex min-w-0 max-w-[58%] flex-col gap-1.5">
-        <span className="label-caps text-on-surface-variant">Portfolio Concentration</span>
+        <span className="label-caps text-on-surface-variant">Portfolio Concentration · all categories</span>
         <h3 className="font-headline text-xl font-semibold tracking-tight text-on-surface">{Math.round(fbPct)}% F&amp;B Weighted</h3>
         <p className="text-xs leading-snug text-on-surface-variant">
           {fb.tenants} F&amp;B {fb.tenants === 1 ? "tenant" : "tenants"} account for {money(fb.total)} of {money(total)} recorded turnover.

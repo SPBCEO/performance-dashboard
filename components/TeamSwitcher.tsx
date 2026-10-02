@@ -38,7 +38,7 @@ export function TeamSwitcher({
               if (res.ok) router.refresh();
             })
           }
-          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          className="absolute inset-x-0 -inset-y-3 h-[calc(100%+1.5rem)] w-full cursor-pointer opacity-0"
         >
           {teams.map((t) => (
             <option key={t.id} value={t.id}>{t.name}</option>

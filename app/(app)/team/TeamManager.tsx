@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { changeMemberRole, createInvite, removeMember, revokeInvite, signOut } from "@/lib/actions/teams";
+import { changeMemberRole, createInvite, createTeam, removeMember, revokeInvite, signOut } from "@/lib/actions/teams";
 import { ROLE_LABEL, type Role } from "@/lib/teams-shared";
 
 export type MemberRow = { user_id: string; role: Role; email: string; isYou: boolean };
@@ -18,6 +18,7 @@ export function TeamManager({ teamName, myRole, members, invites }: { teamName: 
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [inviteRole, setInviteRole] = useState<"admin" | "viewer">("viewer");
+  const [newTeam, setNewTeam] = useState("");
   const isOwner = myRole === "owner";
   const canInvite = myRole === "owner" || myRole === "admin";
 
@@ -153,6 +154,27 @@ export function TeamManager({ teamName, myRole, members, invites }: { teamName: 
           ) : null}
         </section>
       ) : null}
+
+      <section className={card}>
+        <h2 className="mb-2 font-headline text-lg font-semibold text-on-surface">Create another team</h2>
+        <form
+          className="flex flex-wrap items-end gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            run(async () => {
+              const r = await createTeam(newTeam);
+              if (r.ok) setNewTeam("");
+              return r;
+            });
+          }}
+        >
+          <label className="min-w-[200px] flex-1 text-xs font-medium text-on-surface-variant">
+            Team name
+            <input required maxLength={80} value={newTeam} onChange={(e) => setNewTeam(e.target.value)} className="mt-1 block min-h-[48px] w-full rounded-lg border border-white/10 bg-surface-container-lowest px-3 text-base text-on-surface focus:border-primary focus:outline-none" />
+          </label>
+          <button type="submit" disabled={pending} className={`${btn} bg-primary-container text-on-primary-container hover:brightness-110`}>Create team</button>
+        </form>
+      </section>
 
       <form action={signOut}>
         <button type="submit" className={`${btn} border border-white/15 text-on-surface hover:bg-white/5`}>Sign out</button>

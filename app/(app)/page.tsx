@@ -2,12 +2,15 @@ import { AddEntryButton } from "@/components/AddEntryButton";
 import { CategoryBreakdown } from "@/components/CategoryBreakdown";
 import { DashboardControls } from "@/components/Controls";
 import { IconArrowDown, IconArrowUp, IconPlus } from "@/components/icons";
+import { SetupPanel } from "@/components/SetupPanel";
 import { TenantList } from "@/components/TenantList";
 import { TrendChart } from "@/components/TrendChart";
 import { aggregate, filterEntries, latestDate, monthOverMonth, sum } from "@/lib/data/aggregate";
 import { buildTenantViews, loadDashboard, parseCategory, parsePeriod } from "@/lib/data/dashboard";
 import { CATEGORY_LABEL } from "@/lib/data/types";
 import { formatDate, money, moneyCompact, moneyExact } from "@/lib/format";
+
+export const metadata = { title: "Overview" };
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
 
@@ -18,13 +21,17 @@ export default async function Overview({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
   const period = parsePeriod(sp.period);
   const category = parseCategory(sp.category);
-  const { property, tenants, entries } = await loadDashboard(sp.property);
+  const { properties, property, tenants, entries } = await loadDashboard(sp.property);
 
   if (!property) {
     return (
-      <div className="mx-auto max-w-2xl rounded-xl border border-dashed border-outline-variant p-10 text-center">
-        <p className="font-semibold text-on-surface">No properties found</p>
-        <p className="mt-1 text-sm text-on-surface-variant">Add a property to the database to start tracking turnover.</p>
+      <div className="flex flex-col gap-4">
+        <h1 className="font-headline text-2xl font-semibold text-on-surface">Welcome to your team</h1>
+        <div className="rounded-xl border border-dashed border-outline-variant p-8 text-center">
+          <p className="font-semibold text-on-surface">No properties yet</p>
+          <p className="mt-1 text-sm text-on-surface-variant">Add your first property, then its tenants, to start tracking turnover.</p>
+        </div>
+        <SetupPanel properties={properties} defaultOpen />
       </div>
     );
   }
@@ -51,6 +58,7 @@ export default async function Overview({ searchParams }: { searchParams: SP }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <h1 className="sr-only">{property.name} turnover overview</h1>
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -76,10 +84,13 @@ export default async function Overview({ searchParams }: { searchParams: SP }) {
       </section>
 
       {tenants.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-outline-variant p-10 text-center">
-          <p className="font-semibold text-on-surface">This property has no tenants yet</p>
-          <p className="mt-1 text-sm text-on-surface-variant">Tenants must exist before turnover can be recorded.</p>
-        </div>
+        <>
+          <div className="rounded-xl border border-dashed border-outline-variant p-10 text-center">
+            <p className="font-semibold text-on-surface">This property has no tenants yet</p>
+            <p className="mt-1 text-sm text-on-surface-variant">Tenants must exist before turnover can be recorded.</p>
+          </div>
+          <SetupPanel properties={properties} defaultOpen />
+        </>
       ) : entries.length === 0 ? (
         <div className="rounded-xl border border-dashed border-outline-variant p-10 text-center">
           <p className="font-semibold text-on-surface">No turnover recorded yet</p>
