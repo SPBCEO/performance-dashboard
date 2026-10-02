@@ -15,7 +15,7 @@ export function StatusBadge({ performance, showDetail = false }: { performance: 
   let icon: React.ReactNode = null;
   let text = "";
   if (status === "outperforming") {
-    cls = "bg-tertiary-container text-on-tertiary";
+    cls = "bg-tertiary text-surface";
     icon = <IconArrowUp className="h-3.5 w-3.5" />;
     text = `${r} Baseline`;
   } else if (status === "underperforming") {

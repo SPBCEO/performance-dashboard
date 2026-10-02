@@ -8,6 +8,7 @@ import { TrendChart } from "@/components/TrendChart";
 import { aggregate, sum } from "@/lib/data/aggregate";
 import { buildTenantViews, parsePeriod } from "@/lib/data/dashboard";
 import { getTenant, listEntries, listTenants } from "@/lib/data/queries";
+import { requireTeam } from "@/lib/teams";
 import { CATEGORY_LABEL } from "@/lib/data/types";
 import { formatDate, moneyExact } from "@/lib/format";
 
@@ -18,12 +19,13 @@ export default async function TenantDetail({ params, searchParams }: { params: P
   const { id } = await params;
   const period = parsePeriod((await searchParams).period);
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const tenant = await getTenant(id);
+  const { active } = await requireTeam();
+  const tenant = await getTenant(id, active.team_id);
   if (!tenant) notFound();
 
   // Performance anchors on the property's latest month, so score against the whole property.
   const entries = await listEntries([tenant.id]);
-  const propertyEntries = await listPropertyEntries(tenant.property_id);
+  const propertyEntries = await listPropertyEntries(tenant.property_id, active.team_id);
   const [view] = buildTenantViews([tenant], entries, propertyEntries);
   const series = aggregate(entries, [tenant], period);
   const newestFirst = [...entries].sort((a, b) => b.entry_date.localeCompare(a.entry_date));
@@ -94,7 +96,7 @@ export default async function TenantDetail({ params, searchParams }: { params: P
   );
 }
 
-async function listPropertyEntries(propertyId: string) {
-  const tenants = await listTenants(propertyId);
+async function listPropertyEntries(propertyId: string, teamId: string) {
+  const tenants = await listTenants(propertyId, teamId);
   return listEntries(tenants.map((t) => t.id));
 }

@@ -2,32 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { canEdit, getTeamContext } from "@/lib/teams";
+import { UUID, validateEntry, type EntryInput } from "@/lib/validation";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
-export type EntryInput = {
-  tenant_id: string;
-  entry_date: string;
-  amount: number | string;
-};
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function validate(input: EntryInput):
-  | { ok: true; value: { tenant_id: string; entry_date: string; amount: number } }
-  | { ok: false; error: string } {
-  if (!UUID.test(String(input.tenant_id ?? ""))) return { ok: false, error: "Choose a tenant." };
-  const date = String(input.entry_date ?? "");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) {
-    return { ok: false, error: "Enter a valid date." };
-  }
-  if (new Date(date).toISOString().slice(0, 10) !== date) {
-    return { ok: false, error: "Enter a valid date." };
-  }
-  const amount = typeof input.amount === "number" ? input.amount : Number(String(input.amount).replace(/[$,\s]/g, ""));
-  if (!Number.isFinite(amount) || amount < 0) return { ok: false, error: "Amount must be 0 or more." };
-  if (amount >= 1e10) return { ok: false, error: "Amount is too large." };
-  return { ok: true, value: { tenant_id: input.tenant_id, entry_date: date, amount: Math.round(amount * 100) / 100 } };
+/** Signed in, in a team, and allowed to write (owner/admin). The database enforces the same via RLS. */
+async function requireEditor(): Promise<{ ok: true; teamId: string } | { ok: false; error: string }> {
+  const ctx = await getTeamContext();
+  if (!ctx.user) return { ok: false, error: "Please sign in again." };
+  if (!ctx.active) return { ok: false, error: "Join or create a team first." };
+  if (!canEdit(ctx.active.role)) return { ok: false, error: "Viewers can't change data." };
+  return { ok: true, teamId: ctx.active.team_id };
 }
 
 function refresh() {
@@ -35,9 +21,19 @@ function refresh() {
 }
 
 export async function createEntry(input: EntryInput): Promise<ActionResult> {
-  const v = validate(input);
+  const who = await requireEditor();
+  if (!who.ok) return who;
+  const v = validateEntry(input);
   if (!v.ok) return v;
   const supabase = await createClient();
+  // The tenant must belong to the active team.
+  const { data: tenant } = await supabase
+    .from("tenants")
+    .select("id")
+    .eq("id", v.value.tenant_id)
+    .eq("team_id", who.teamId)
+    .maybeSingle();
+  if (!tenant) return { ok: false, error: "That tenant isn't in your active team." };
   const { error } = await supabase.from("turnover_entries").insert({ ...v.value, source: "manual" });
   if (error) return { ok: false, error: "Could not save the entry. Please try again." };
   refresh();
@@ -45,14 +41,17 @@ export async function createEntry(input: EntryInput): Promise<ActionResult> {
 }
 
 export async function updateEntry(id: string, input: EntryInput): Promise<ActionResult> {
+  const who = await requireEditor();
+  if (!who.ok) return who;
   if (!UUID.test(id)) return { ok: false, error: "Unknown entry." };
-  const v = validate(input);
+  const v = validateEntry(input);
   if (!v.ok) return v;
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("turnover_entries")
     .update(v.value)
     .eq("id", id)
+    .eq("team_id", who.teamId)
     .select("id");
   if (error) return { ok: false, error: "Could not update the entry. Please try again." };
   if (!data?.length) return { ok: false, error: "That entry no longer exists." };
@@ -61,9 +60,16 @@ export async function updateEntry(id: string, input: EntryInput): Promise<Action
 }
 
 export async function deleteEntry(id: string): Promise<ActionResult> {
+  const who = await requireEditor();
+  if (!who.ok) return who;
   if (!UUID.test(id)) return { ok: false, error: "Unknown entry." };
   const supabase = await createClient();
-  const { data, error } = await supabase.from("turnover_entries").delete().eq("id", id).select("id");
+  const { data, error } = await supabase
+    .from("turnover_entries")
+    .delete()
+    .eq("id", id)
+    .eq("team_id", who.teamId)
+    .select("id");
   if (error) return { ok: false, error: "Could not delete the entry. Please try again." };
   if (!data?.length) return { ok: false, error: "That entry no longer exists." };
   refresh();

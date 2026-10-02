@@ -38,7 +38,7 @@ export function TenantList({
             aria-pressed={reversed}
             className="flex min-h-[44px] items-center gap-1 px-3 text-xs font-semibold text-primary"
           >
-            <IconSort className="h-[18px] w-[18px]" /> Order
+            <IconSort className="h-[18px] w-[18px]" /> {reversed ? "Best first" : "Worst first"}
           </button>
         ) : null}
       </div>

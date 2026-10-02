@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createEntry, deleteEntry, updateEntry } from "@/lib/actions/entries";
-import { todayISO } from "@/lib/format";
+import { moneyExact, todayISO } from "@/lib/format";
 import type { Property, Tenant } from "@/lib/data/types";
 
 export type EditableEntry = { id: string; tenant_id: string; entry_date: string; amount: number };
@@ -11,6 +11,7 @@ type Ctx = {
   openAdd: (opts?: { tenantId?: string }) => void;
   openEdit: (entry: EditableEntry) => void;
   confirmDelete: (entry: EditableEntry & { tenantName?: string }) => void;
+  canEdit: boolean;
 };
 
 const EntryModalContext = createContext<Ctx | null>(null);
@@ -30,22 +31,30 @@ type State =
 export function EntryModalProvider({
   tenants,
   properties,
+  canEdit,
   children,
 }: {
   tenants: Tenant[];
   properties: Property[];
+  canEdit: boolean;
   children: React.ReactNode;
 }) {
   const [state, setState] = useState<State>({ kind: "closed" });
+  const [toast, setToast] = useState<string | null>(null);
   const close = useCallback(() => setState({ kind: "closed" }), []);
+  const saved = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 4000);
+  }, []);
 
   const ctx = useMemo<Ctx>(
     () => ({
       openAdd: (opts) => setState({ kind: "add", tenantId: opts?.tenantId }),
       openEdit: (entry) => setState({ kind: "edit", entry }),
       confirmDelete: (entry) => setState({ kind: "delete", entry }),
+      canEdit,
     }),
-    [],
+    [canEdit],
   );
 
   return (
@@ -59,37 +68,57 @@ export function EntryModalProvider({
           entry={state.kind === "edit" ? state.entry : undefined}
           defaultTenantId={state.kind === "add" ? state.tenantId : undefined}
           onClose={close}
+          onSaved={saved}
         />
       ) : null}
-      {state.kind === "delete" ? <DeleteConfirm entry={state.entry} onClose={close} /> : null}
+      {state.kind === "delete" ? <DeleteConfirm entry={state.entry} onClose={close} onSaved={saved} /> : null}
+      <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-24 z-[70] flex justify-center px-4">
+        {toast ? (
+          <div className="pointer-events-auto rounded-full bg-surface-container-highest px-4 py-2 text-sm text-on-surface shadow-lg ring-1 ring-white/10">{toast}</div>
+        ) : null}
+      </div>
     </EntryModalContext.Provider>
   );
 }
 
+const FOCUSABLE = "a[href],button:not([disabled]),select:not([disabled]),input:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])";
+
 function Overlay({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const opener = document.activeElement as HTMLElement | null;
+    const node = ref.current;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return onClose();
+      if (e.key !== "Tab" || !node) return;
+      const items = [...node.querySelectorAll<HTMLElement>(FOCUSABLE)];
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    ref.current?.querySelector<HTMLElement>("select,input,button")?.focus();
+    node?.querySelector<HTMLElement>("select,input,button")?.focus();
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
+      opener?.focus?.();
     };
   }, [onClose]);
   return (
     <div
       className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-0 backdrop-blur-md sm:items-center sm:p-4"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      role="presentation"
     >
       <div
         ref={ref}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="pb-safe w-full max-w-md rounded-t-2xl border-t border-white/15 bg-[#1e293b] p-5 shadow-[0_12px_32px_-4px_rgba(0,0,0,0.45)] sm:rounded-2xl sm:border"
+        className="pb-safe max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-2xl border-t border-white/15 bg-[#1e293b] p-5 shadow-[0_12px_32px_-4px_rgba(0,0,0,0.45)] sm:rounded-2xl sm:border"
       >
         <div aria-hidden="true" className="mx-auto mb-3 h-1 w-9 rounded-full bg-slate-600 sm:hidden" />
         <h2 className="mb-4 font-headline text-xl font-semibold text-on-surface">{title}</h2>
@@ -105,12 +134,14 @@ function EntryForm({
   entry,
   defaultTenantId,
   onClose,
+  onSaved,
 }: {
   tenants: Tenant[];
   properties: Property[];
   entry?: EditableEntry;
   defaultTenantId?: string;
   onClose: () => void;
+  onSaved: (msg: string) => void;
 }) {
   const editing = !!entry;
   const [tenantId, setTenantId] = useState(entry?.tenant_id ?? defaultTenantId ?? "");
@@ -129,8 +160,11 @@ function EntryForm({
     startTransition(async () => {
       const input = { tenant_id: tenantId, entry_date: date, amount };
       const res = editing ? await updateEntry(entry!.id, input) : await createEntry(input);
-      if (res.ok) onClose();
-      else setError(res.error);
+      if (res.ok) {
+        const t = tenants.find((x) => x.id === tenantId);
+        onSaved(`${editing ? "Updated" : "Saved"} ${moneyExact(Number(String(amount).replace(/[$,s]/g, "")) || 0)} · ${t?.name ?? "entry"} · ${date}`);
+        onClose();
+      } else setError(res.error);
     });
   }
 
@@ -201,7 +235,7 @@ function EntryForm({
   );
 }
 
-function DeleteConfirm({ entry, onClose }: { entry: EditableEntry & { tenantName?: string }; onClose: () => void }) {
+function DeleteConfirm({ entry, onClose, onSaved }: { entry: EditableEntry & { tenantName?: string }; onClose: () => void; onSaved: (msg: string) => void }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   return (
@@ -221,8 +255,10 @@ function DeleteConfirm({ entry, onClose }: { entry: EditableEntry & { tenantName
           onClick={() =>
             startTransition(async () => {
               const res = await deleteEntry(entry.id);
-              if (res.ok) onClose();
-              else setError(res.error);
+              if (res.ok) {
+                onSaved(`Deleted entry · ${entry.tenantName ?? ""} ${entry.entry_date}`.trim());
+                onClose();
+              } else setError(res.error);
             })
           }
           className="min-h-[44px] rounded-full bg-error-container px-6 text-sm font-semibold text-on-error-container hover:brightness-110 disabled:opacity-60"

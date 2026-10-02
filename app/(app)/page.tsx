@@ -173,12 +173,7 @@ export default async function Overview({ searchParams }: { searchParams: SP }) {
             subtitle="Underperforming first, then by annual turnover"
           />
 
-          <div className="pointer-events-none sticky bottom-24 z-40 flex justify-end md:hidden">
-            <AddEntryButton className="pointer-events-auto flex min-h-[48px] items-center gap-2 rounded-full bg-primary-container px-5 text-sm font-semibold text-on-primary-container shadow-[0_8px_24px_rgba(217,119,7,0.4)] active:scale-95">
-              <IconPlus className="h-5 w-5" /> Record Turnover
-            </AddEntryButton>
-          </div>
-        </>
+</>
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+import { requireTeam } from "@/lib/teams";
 import { listEntries, listProperties, listTenants } from "./queries";
 import {
   aggregate,
@@ -25,11 +26,12 @@ export type DashboardData = {
 };
 
 export async function loadDashboard(propertyParam?: string | string[]): Promise<DashboardData> {
-  const properties = await listProperties();
+  const { active } = await requireTeam();
+  const properties = await listProperties(active.team_id);
   const wanted = Array.isArray(propertyParam) ? propertyParam[0] : propertyParam;
   const property = properties.find((p) => p.id === wanted) ?? properties[0] ?? null;
   if (!property) return { properties, property: null, tenants: [], entries: [] };
-  const tenants = await listTenants(property.id);
+  const tenants = await listTenants(property.id, active.team_id);
   const entries = await listEntries(tenants.map((t) => t.id));
   return { properties, property, tenants, entries };
 }

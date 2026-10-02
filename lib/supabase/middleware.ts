@@ -1,44 +1,61 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+// Reachable without a session. Everything else requires sign-in.
+const PUBLIC_PREFIXES = ["/login", "/auth/", "/api/health", "/api/stripe/webhooks"];
+
+function isPublic(pathname: string) {
+  return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p));
+}
+
+function redirectTo(request: NextRequest, source: NextResponse, path: string, search = "") {
+  const url = request.nextUrl.clone();
+  url.pathname = path;
+  url.search = search;
+  const res = NextResponse.redirect(url);
+  // keep any refreshed auth cookies on the redirect
+  source.cookies.getAll().forEach((c) => res.cookies.set(c));
+  return res;
+}
+
 export async function updateSession(request: NextRequest) {
-  const supabaseResponse = NextResponse.next({ request });
+  let response = NextResponse.next({ request });
+  const { pathname, search } = request.nextUrl;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // If Supabase isn't configured, skip the auth refresh and pass through.
-  // Without this guard createServerClient throws "Your project's URL and Key
-  // are required", crashing the edge middleware on every route (500
-  // MIDDLEWARE_INVOCATION_FAILED).
+  // Misconfigured env: only public paths may pass; never fail open to app data.
   if (!url || !anonKey) {
-    return supabaseResponse;
+    return isPublic(pathname) ? response : redirectTo(request, response, "/login");
   }
 
+  let signedIn = false;
   try {
-    let response = supabaseResponse;
     const supabase = createServerClient(url, anonKey, {
       cookies: {
         getAll() {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
-          );
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
         },
       },
     });
-
-    // Refresh session so it doesn't expire while user is active
-    await supabase.auth.getUser();
-    return response;
+    const { data } = await supabase.auth.getUser();
+    signedIn = !!data.user;
   } catch {
-    // Never let an auth hiccup crash the entire edge middleware
-    return supabaseResponse;
+    signedIn = false; // fail closed
   }
+
+  if (!signedIn && !isPublic(pathname)) {
+    const next = pathname + search;
+    return redirectTo(request, response, "/login", next === "/" ? "" : `?next=${encodeURIComponent(next)}`);
+  }
+  if (signedIn && pathname === "/login") {
+    return redirectTo(request, response, "/");
+  }
+  return response;
 }

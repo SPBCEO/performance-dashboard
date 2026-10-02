@@ -3,36 +3,52 @@ import type { Property, Tenant, TurnoverEntry } from "./types";
 
 const PAGE = 1000; // PostgREST default row cap per request
 
-export async function listProperties(): Promise<Property[]> {
+// Every read is scoped to the active team here AND by row-level security in the database.
+
+export async function listProperties(teamId: string): Promise<Property[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("properties")
     .select("id,name")
+    .eq("team_id", teamId)
     .order("created_at", { ascending: true })
     .order("name", { ascending: true });
-  if (error) throw new Error(`properties: ${error.message}`);
+  if (error) throw new Error("Could not load properties");
   return data ?? [];
 }
 
-export async function listTenants(propertyId: string): Promise<Tenant[]> {
+export async function listAllTenants(teamId: string): Promise<Tenant[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tenants")
+    .select("id,property_id,name,category")
+    .eq("team_id", teamId)
+    .order("name", { ascending: true });
+  if (error) throw new Error("Could not load tenants");
+  return (data ?? []) as Tenant[];
+}
+
+export async function listTenants(propertyId: string, teamId: string): Promise<Tenant[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tenants")
     .select("id,property_id,name,category")
     .eq("property_id", propertyId)
+    .eq("team_id", teamId)
     .order("name", { ascending: true });
-  if (error) throw new Error(`tenants: ${error.message}`);
+  if (error) throw new Error("Could not load tenants");
   return (data ?? []) as Tenant[];
 }
 
-export async function getTenant(tenantId: string): Promise<Tenant | null> {
+export async function getTenant(tenantId: string, teamId: string): Promise<Tenant | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tenants")
     .select("id,property_id,name,category")
     .eq("id", tenantId)
+    .eq("team_id", teamId)
     .maybeSingle();
-  if (error) throw new Error(`tenant: ${error.message}`);
+  if (error) throw new Error("Could not load tenant");
   return (data as Tenant | null) ?? null;
 }
 
@@ -49,7 +65,7 @@ export async function listEntries(tenantIds: string[]): Promise<TurnoverEntry[]>
       .order("entry_date", { ascending: true })
       .order("created_at", { ascending: true })
       .range(from, from + PAGE - 1);
-    if (error) throw new Error(`entries: ${error.message}`);
+    if (error) throw new Error("Could not load entries");
     const rows = (data ?? []).map((r) => ({
       id: r.id as string,
       tenant_id: r.tenant_id as string,

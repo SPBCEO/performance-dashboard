@@ -37,3 +37,6 @@ export const IconInfo = ({ className }: P) => (
 export const IconClose = ({ className }: P) => (
   <svg {...base} className={className}><path d="M6 6l12 12M18 6 6 18" /></svg>
 );
+export const IconTeam = ({ className }: P) => (
+  <svg {...base} className={className}><circle cx="9" cy="8" r="3.2" /><path d="M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1M16 4.5a3.2 3.2 0 0 1 0 6M18 14.2A5 5 0 0 1 21 19v1" /></svg>
+);

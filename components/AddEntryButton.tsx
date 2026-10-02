@@ -11,7 +11,8 @@ export function AddEntryButton({
   className?: string;
   children?: React.ReactNode;
 }) {
-  const { openAdd } = useEntryModal();
+  const { openAdd, canEdit } = useEntryModal();
+  if (!canEdit) return null;
   return (
     <button
       type="button"

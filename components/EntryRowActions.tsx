@@ -3,7 +3,8 @@
 import { useEntryModal, type EditableEntry } from "./EntryModal";
 
 export function EntryRowActions({ entry, tenantName }: { entry: EditableEntry; tenantName: string }) {
-  const { openEdit, confirmDelete } = useEntryModal();
+  const { openEdit, confirmDelete, canEdit } = useEntryModal();
+  if (!canEdit) return null;
   return (
     <div className="flex shrink-0 items-center">
       <button
